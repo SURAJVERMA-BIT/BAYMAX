@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baymax Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; 
+            background: url('/static/background.avif') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        .chat-container {
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px); /* Blur Effect */
+            -webkit-backdrop-filter: blur(15px); /* Safari */
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(225,0,0,0.3);
+            padding: 20px;
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+        }
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15); /* Slightly darker */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+        }
+        .message {
+            margin: 10px 0; 
+            padding: 8px 12px; 
+            border-radius: 5px; 
+            max-width: 80%; 
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.5s forwards;
+        }
+        .user-message {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px); /* Blur Effect */
+            -webkit-backdrop-filter: blur(12px); /* Safari */ 
+            color: white;
+            margin-left: auto;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        .baymax-message {
+            background: rgba(255, 0, 0, 0.2);
+            backdrop-filter: blur(12px); /* Blur Effect */
+            -webkit-backdrop-filter: blur(12px); /* Safari */
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        input { 
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+        }
+        button { 
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px); /* Blur Effect */
+            -webkit-backdrop-filter: blur(10px); /* Safari */
+            color: white; 
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .gif-container {
+            flex: 0 0 auto;
+        }
+        .baymax-gif {
+            max-width: 500px;
+            height: auto;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .bg-selector {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <input type="file" id="bgUpload" class="bg-selector" accept="image/*" onchange="changeBackground(event)">
+            <div class="chat-box" id="chatBox">
+                <div class="baymax-message">Hello! I am Baymax, your personal healthcare companion. How may I assist you today?</div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="Type your message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        <div class="gif-container">
+            <img src="/static/baymax.gif" alt="Baymax GIF" class="baymax-gif">
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+
+        function addMessage(message, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'baymax-message'}`;
+            div.textContent = message;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            userInput.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+                
+                addMessage(`Baymax: ${data.response}`);
+                
+                if (data.audio) {
+                    const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+                    audio.play();
+                }
+            } catch (error) {
+                addMessage(`Baymax: I am experiencing a technical difficulty. Error: ${error}`);
+            }
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function changeBackground(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.backgroundImage = `url(${e.target.result})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Flask
+edge_tts
+playsound
+google-generativeai
+python-dotenv
+asyncio
+baymaxtts
+requests
+```
